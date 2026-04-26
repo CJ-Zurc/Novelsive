@@ -1,0 +1,531 @@
+# Novelsive Development Environment Setup Documentation
+
+## Project Title
+
+**Novelsive: An Immersive Novel Reading Web Application using Natural Language Processing**
+
+---
+
+# 1. Overview
+
+This document describes the initial technical environment setup completed for the Novelsive system, including:
+
+* Frontend setup
+* Backend setup
+* Database tools
+* NLP microservice setup
+* GitHub repository setup
+* Initial service integration test
+
+The objective of this setup was to establish the foundational architecture of the system based on the selected tech stack.
+
+---
+
+# 2. Selected Tech Stack
+
+## Frontend
+
+* Next.js
+* Tailwind CSS (planned)
+
+Purpose:
+
+* User interface for reading and writing novels
+* Immersive visual/audio environment integration
+* Client-side interaction
+
+---
+
+## Backend
+
+* Node.js
+* Express.js
+* Axios
+
+Purpose:
+
+* REST API development
+* Business logic processing
+* Communication with database and NLP service
+
+---
+
+## Database
+
+* MySQL
+* phpMyAdmin
+
+Purpose:
+
+* Data persistence
+* Relational database management
+
+---
+
+## NLP Service
+
+* Python
+* FastAPI
+* Transformers
+* DistilBERT
+* Uvicorn
+* Torch
+
+Purpose:
+
+* Emotion and context analysis of novel text
+* Support immersive environment generation
+* Support recommendation logic
+
+---
+
+# 3. Development Environment Verification
+
+## Node.js Version Check
+
+Command used:
+
+```bash
+node -v
+```
+
+Result:
+
+```bash
+v24.12.0
+```
+
+Status:
+
+* Verified working
+* LTS version confirmed
+
+---
+
+## Python Version
+
+Command:
+
+```bash
+python --version
+```
+
+Result:
+
+```bash
+Python 3.13.1
+```
+
+Status:
+
+* Installed and working
+* Used for NLP microservice setup
+
+---
+
+# 4. GitHub Repository Setup
+
+Repository structure adopted (Monorepo):
+
+```text
+novelsive/
+├── frontend/
+├── backend/
+├── nlp-service/
+└── README.md
+```
+
+Git initialization commands:
+
+```bash
+git init
+git add .
+git commit -m "Initial project setup"
+```
+
+Purpose:
+
+* Version control
+* Centralized project management
+* Support collaborative and incremental development
+
+---
+
+# 5. Frontend Setup (Next.js)
+
+Command used:
+
+```bash
+npx create-next-app@latest frontend
+```
+
+Development server:
+
+```bash
+npm run dev
+```
+
+Default local URL:
+
+```text
+http://localhost:3000
+```
+
+Result:
+
+* Next.js project initialized successfully.
+
+---
+
+# 6. Backend Setup (Node.js + Express)
+
+## Dependencies Installed
+
+```bash
+npm init -y
+npm install express cors dotenv mysql2 axios
+```
+
+Installed packages:
+
+* express
+* cors
+* dotenv
+* mysql2
+* axios
+
+---
+
+## Initial Express Server
+
+File:
+
+```text
+backend/index.js
+```
+
+Implemented server:
+
+```javascript
+const express = require("express");
+const axios = require("axios");
+
+const app = express();
+app.use(express.json());
+
+app.get("/", (req,res)=>{
+   res.send("Backend running");
+});
+
+app.get("/test-nlp", async(req,res)=>{
+   try{
+      const response = await axios.post(
+        "http://localhost:8000/analyze?text=I am scared"
+      );
+
+      res.json(response.data);
+
+   } catch(error){
+      res.status(500).send("NLP error");
+   }
+});
+
+app.listen(5000, ()=>{
+   console.log("Server running on port 5000");
+});
+```
+
+Run command:
+
+```bash
+node index.js
+```
+
+Local backend endpoint:
+
+```text
+http://localhost:5000
+```
+
+---
+
+# 7. NLP Service Setup
+
+## Virtual Environment Creation
+
+Command:
+
+```bash
+python -m venv venv
+```
+
+Activation:
+
+PowerShell:
+
+```powershell
+.\venv\Scripts\Activate
+```
+
+Prompt after activation:
+
+```text
+(venv)
+```
+
+---
+
+## NLP Dependencies Installed
+
+```bash
+pip install fastapi uvicorn transformers torch
+```
+
+Installed:
+
+* FastAPI
+* Uvicorn
+* Transformers
+* Torch
+
+---
+
+## NLP API Implementation
+
+File:
+
+```text
+nlp-service/main.py
+```
+
+Code:
+
+```python
+from fastapi import FastAPI
+from transformers import pipeline
+
+app = FastAPI()
+
+classifier = pipeline("sentiment-analysis")
+
+@app.get("/")
+def home():
+    return {"message":"NLP Service Running"}
+
+@app.post("/analyze")
+def analyze(text:str):
+    result = classifier(text)
+    return result
+```
+
+Run command:
+
+```bash
+python -m uvicorn main:app --reload
+```
+
+Service URL:
+
+```text
+http://localhost:8000
+```
+
+---
+
+# 8. Integration Test (Backend ↔ NLP Service)
+
+## Test Flow
+
+System communication tested:
+
+```text
+Browser
+↓
+Express Backend
+↓
+Python NLP Service
+↓
+Response Returned
+```
+
+Endpoint tested:
+
+```text
+http://localhost:5000/test-nlp
+```
+
+Input text:
+
+```text
+I am scared
+```
+
+Output received:
+
+```json
+[
+ {
+  "label":"NEGATIVE",
+  "score":0.99
+ }
+]
+```
+
+Result:
+
+* Successful microservice communication verified.
+* Backend-to-NLP integration operational.
+
+---
+
+# 9. Initial System Architecture Implemented
+
+Current implemented architecture:
+
+```text
+Next.js Frontend
+       |
+Node.js + Express API
+       |
+-----------------------------
+|                           |
+MySQL Database       Python NLP Service
+```
+
+Services and Ports:
+
+| Service     | Port |
+| ----------- | ---- |
+| Frontend    | 3000 |
+| Backend     | 5000 |
+| NLP Service | 8000 |
+
+---
+
+# 10. Issues Encountered and Resolutions
+
+## Issue 1
+
+Problem:
+
+```text
+Cannot find module 'axios'
+```
+
+Resolution:
+
+```bash
+npm install axios
+```
+
+---
+
+## Issue 2
+
+Problem:
+
+```text
+uvicorn not recognized
+```
+
+Cause:
+
+* Virtual environment inactive
+
+Resolution:
+
+```powershell
+.\venv\Scripts\Activate
+python -m uvicorn main:app --reload
+```
+
+---
+
+# 11. Proof of Concept Achieved
+
+Successfully demonstrated:
+
+✔ Frontend initialized
+
+✔ Backend API operational
+
+✔ NLP microservice operational
+
+✔ REST API communication working
+
+✔ Emotion analysis returning results
+
+✔ Architecture from C2 diagram partially implemented
+
+---
+
+# 12. Next Planned Development Steps
+
+Planned next implementation phases:
+
+## Phase 1
+
+Database schema creation:
+
+* users
+* novels
+* chapters
+* comments
+* ratings
+* reading_history
+* emotion_analysis
+
+---
+
+## Phase 2
+
+Authentication Module:
+
+* Registration
+* Login
+* Password Recovery
+
+---
+
+## Phase 3
+
+Novel Module:
+
+* Upload novels
+* Chapter management
+* Reading interface
+
+---
+
+## Phase 4
+
+NLP Enhancement:
+
+* DistilBERT emotion classification
+* Chapter-level analysis
+* Immersive environment triggers
+
+---
+
+# 13. Conclusion
+
+The initial development environment for Novelsive was successfully established using the selected full-stack architecture.
+
+The project now has:
+
+* a functioning frontend framework,
+* a working backend API,
+* a connected NLP microservice,
+* and validated inter-service communication.
+
+This serves as the foundation for subsequent system development and implementation of the project modules.
+
+---
+
+## Prepared For
+
+Novelsive Capstone Development Documentation
+
+## Version
+
+Initial Setup Documentation v1.0
