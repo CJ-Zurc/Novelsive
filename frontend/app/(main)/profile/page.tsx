@@ -16,6 +16,7 @@ export default function ProfilePage() {
         username: "",
         email: "",
         date_of_birth: "",
+        role: "USER",
         profile_image: ""
     });
 
@@ -24,6 +25,10 @@ export default function ProfilePage() {
         newPassword: "",
         confirmPassword: ""
     });
+    const [mfaLoading, setMfaLoading] = useState(false);
+    const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
+    const [mfaSetup, setMfaSetup] = useState<{ qr: string; manual: string } | null>(null);
+    const [mfaCode, setMfaCode] = useState("");
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -34,6 +39,7 @@ export default function ProfilePage() {
                     username: data.username || "",
                     email: data.email || "",
                     date_of_birth: data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : "",
+                    role: data.role || "USER",
                     profile_image: data.profile_image || ""
                 });
             } catch (err: any) {
@@ -46,6 +52,61 @@ export default function ProfilePage() {
         };
         fetchProfile();
     }, [router]);
+
+    // When profile is loaded and user is admin, load MFA status
+    useEffect(() => {
+        if (!loading && profile.role === 'ADMIN') {
+            loadMfaStatus();
+        }
+    }, [loading, profile.role]);
+
+    const loadMfaStatus = async () => {
+        setMfaLoading(true);
+        try {
+            const res = await axios.get('/api/admin/mfa');
+            setMfaEnabled(Boolean(res.data.mfaEnabled));
+            if (res.data.setup) setMfaSetup(res.data.setup);
+            else setMfaSetup(null);
+        } catch (e) {
+            console.error(e);
+        } finally { setMfaLoading(false); }
+    };
+
+    const startMfaSetup = async () => {
+        setMfaLoading(true);
+        try {
+            const res = await axios.patch('/api/admin/mfa', { action: 'setup' });
+            setMfaSetup(res.data.setup);
+            Swal.fire({ icon: 'info', title: 'Scan QR', text: 'Scan the QR with your authenticator or copy the manual code.' });
+        } catch (e) { console.error(e); Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not start MFA setup' }); }
+        finally { setMfaLoading(false); }
+    };
+
+    const confirmMfaSetup = async () => {
+        if (!mfaCode.trim()) return Swal.fire({ icon: 'warning', title: 'Enter code', text: 'Please enter the 6-digit code from your authenticator.' });
+        setMfaLoading(true);
+        try {
+            const res = await axios.patch('/api/admin/mfa', { action: 'confirm', code: mfaCode.trim() });
+            Swal.fire({ icon: 'success', title: 'Enabled', text: res.data.message || 'MFA enabled' });
+            setMfaCode('');
+            setMfaSetup(null);
+            setMfaEnabled(true);
+        } catch (e: any) { console.error(e); Swal.fire({ icon: 'error', title: 'Failed', text: e?.response?.data?.message || 'Could not confirm code' }); }
+        finally { setMfaLoading(false); }
+    };
+
+    const disableMfa = async () => {
+        const result = await Swal.fire({ title: 'Disable MFA?', text: 'This will remove MFA from your account.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Disable' });
+        if (!result.isConfirmed) return;
+        setMfaLoading(true);
+        try {
+            await axios.patch('/api/admin/mfa', { action: 'disable' });
+            Swal.fire({ icon: 'success', title: 'Disabled', text: 'MFA has been disabled.' });
+            setMfaEnabled(false);
+            setMfaSetup(null);
+        } catch (e) { console.error(e); Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not disable MFA' }); }
+        finally { setMfaLoading(false); }
+    };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -316,6 +377,48 @@ export default function ProfilePage() {
                             </button>
                         </form>
                     </div>
+                    {/* MFA Section - visible to admins */}
+                    {profile.role === 'ADMIN' && (
+                        <div className="pt-6 border-t">
+                            <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Multi-Factor Authentication</h2>
+                            {mfaLoading ? (
+                                <div>Loading...</div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="text-sm text-gray-500">Use an authenticator app (e.g., Microsoft Authenticator) to enable TOTP MFA for your admin account.</div>
+                                    <div className="mt-2 font-semibold">Status: {mfaEnabled ? <span className="text-green-600">Enabled</span> : <span className="text-gray-600">Disabled</span>}</div>
+
+                                    {!mfaEnabled && !mfaSetup && (
+                                        <div className="flex gap-2">
+                                            <button onClick={startMfaSetup} className="px-4 py-2 rounded-lg bg-indigo-600 text-white">Set up MFA</button>
+                                        </div>
+                                    )}
+
+                                    {mfaSetup && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                                            <div className="sm:col-span-1">
+                                                <img src={mfaSetup.qr} alt="MFA QR" className="w-48 h-48 bg-white p-2 rounded-md shadow" />
+                                            </div>
+                                            <div className="sm:col-span-2">
+                                                <div className="mb-2">Manual code:</div>
+                                                <div className="font-mono bg-gray-50 p-2 rounded">{mfaSetup.manual}</div>
+                                                <div className="mt-4">
+                                                    <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} placeholder="123456" className="px-3 py-2 border rounded mr-2" />
+                                                    <button onClick={confirmMfaSetup} className="px-4 py-2 rounded-lg bg-green-600 text-white">Confirm</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {mfaEnabled && (
+                                        <div>
+                                            <button onClick={disableMfa} className="px-4 py-2 rounded-lg bg-red-600 text-white">Disable MFA</button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

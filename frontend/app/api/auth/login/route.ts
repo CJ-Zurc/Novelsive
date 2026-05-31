@@ -67,6 +67,20 @@ function clearLoginAttempts(key: string) {
     loginAttempts.delete(key);
 }
 
+function buildRateLimitResponse(message: string, retryAfterMinutes: number) {
+    return NextResponse.json(
+        { message },
+        {
+            status: 429,
+            headers: {
+                "Retry-After": String(Math.max(retryAfterMinutes, 1) * 60),
+                "X-RateLimit-Limit": MAX_ATTEMPTS.toString(),
+                "X-RateLimit-Remaining": "0",
+            },
+        }
+    );
+}
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -87,17 +101,17 @@ export async function POST(req: NextRequest) {
         // Check lockouts
         const emailLock = checkLockout(emailKey);
         if (emailLock.locked) {
-            return NextResponse.json(
-                { message: `Too many failed attempts. This account is locked. Please try again in ${emailLock.timeLeftMinutes} minute(s).` },
-                { status: 429 }
+            return buildRateLimitResponse(
+                `Too many failed attempts. This account is locked. Please try again in ${emailLock.timeLeftMinutes} minute(s).`,
+                emailLock.timeLeftMinutes
             );
         }
 
         const ipLock = checkLockout(ip);
         if (ipLock.locked) {
-            return NextResponse.json(
-                { message: `Too many failed attempts from your IP. Please try again in ${ipLock.timeLeftMinutes} minute(s).` },
-                { status: 429 }
+            return buildRateLimitResponse(
+                `Too many failed attempts from your IP. Please try again in ${ipLock.timeLeftMinutes} minute(s).`,
+                ipLock.timeLeftMinutes
             );
         }
 
@@ -155,8 +169,33 @@ export async function POST(req: NextRequest) {
         clearLoginAttempts(emailKey);
         clearLoginAttempts(ip);
 
-        const secret = new TextEncoder().encode(env.JWT_SECRET);
+        // If admin has MFA enabled, issue a short-lived MFA challenge instead
+        if (user.role === "ADMIN" && user.mfa_enabled && user.mfa_secret) {
+            const secret = new TextEncoder().encode(env.JWT_SECRET);
+            const mfaToken = await new SignJWT({
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                purpose: "mfa",
+            })
+                .setProtectedHeader({ alg: "HS256" })
+                .setExpirationTime("5m")
+                .sign(secret);
 
+            const response = NextResponse.json({ message: "MFA_REQUIRED", mfaRequired: true });
+            response.cookies.set("mfa_challenge", mfaToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 60 * 5,
+                path: "/",
+            });
+            return response;
+        }
+
+        // Otherwise issue normal session token
+        const secret = new TextEncoder().encode(env.JWT_SECRET);
         const token = await new SignJWT({
             id: user.id,
             username: user.username,

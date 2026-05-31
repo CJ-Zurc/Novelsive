@@ -22,7 +22,7 @@ import {
 } from "recharts";
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"users" | "novels" | "manuscripts" | "analytics" | "mature" | "audit">("analytics");
+  const [tab, setTab] = useState<"users" | "novels" | "manuscripts" | "analytics" | "mature" | "audit" | "security">("analytics");
   const [users, setUsers] = useState<any[]>([]);
   const [userSearch, setUserSearch] = useState("");
   const [novels, setNovels] = useState<any[]>([]);
@@ -31,6 +31,10 @@ export default function AdminPage() {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
+  const [mfaSetup, setMfaSetup] = useState<{ qr: string; manual: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
   const [rejectModal, setRejectModal] = useState<any>(null);
   const [rejectForm, setRejectForm] = useState({ rejection_title: "", rejection_reason: "" });
 
@@ -65,7 +69,66 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadData();
+    if (tab === "security") loadMfaStatus();
   }, [tab]);
+
+  const loadMfaStatus = async () => {
+    setMfaLoading(true);
+    try {
+      const res = await axios.get(`/api/admin/mfa`);
+      setMfaEnabled(Boolean(res.data.mfaEnabled));
+      if (res.data.setup) setMfaSetup(res.data.setup);
+      else setMfaSetup(null);
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not load MFA status' });
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const startMfaSetup = async () => {
+    setMfaLoading(true);
+    try {
+      const res = await axios.patch(`/api/admin/mfa`, { action: 'setup' });
+      setMfaSetup(res.data.setup);
+      Swal.fire({ icon: 'info', title: 'Scan QR', text: 'Scan the QR with your authenticator or copy the manual code.' });
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not start MFA setup' });
+    } finally { setMfaLoading(false); }
+  };
+
+  const confirmMfaSetup = async () => {
+    if (!mfaCode.trim()) return Swal.fire({ icon: 'warning', title: 'Enter code', text: 'Please enter the 6-digit code from your authenticator.' });
+    setMfaLoading(true);
+    try {
+      const res = await axios.patch(`/api/admin/mfa`, { action: 'confirm', code: mfaCode.trim() });
+      Swal.fire({ icon: 'success', title: 'Enabled', text: res.data.message || 'MFA enabled' });
+      setMfaCode('');
+      setMfaSetup(null);
+      setMfaEnabled(true);
+    } catch (e: any) {
+      console.error(e);
+      const msg = e?.response?.data?.message || 'Could not confirm code';
+      Swal.fire({ icon: 'error', title: 'Failed', text: msg });
+    } finally { setMfaLoading(false); }
+  };
+
+  const disableMfa = async () => {
+    const result = await Swal.fire({ title: 'Disable MFA?', text: 'This will remove MFA from your account.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Disable' });
+    if (!result.isConfirmed) return;
+    setMfaLoading(true);
+    try {
+      await axios.patch(`/api/admin/mfa`, { action: 'disable' });
+      Swal.fire({ icon: 'success', title: 'Disabled', text: 'MFA has been disabled.' });
+      setMfaEnabled(false);
+      setMfaSetup(null);
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not disable MFA' });
+    } finally { setMfaLoading(false); }
+  };
 
   const handleUserSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -378,6 +441,9 @@ export default function AdminPage() {
         <button onClick={() => setTab("audit")} className={`px-4 py-2.5 rounded-xl font-bold transition duration-200 cursor-pointer ${tab === "audit" ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-150' : 'bg-white text-gray-600 border border-gray-150 hover:bg-gray-100'}`}>
           📜 Audit Logs
         </button>
+        <button onClick={() => setTab("security")} className={`px-4 py-2.5 rounded-xl font-bold transition duration-200 cursor-pointer ${tab === "security" ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-150' : 'bg-white text-gray-600 border border-gray-150 hover:bg-gray-100'}`}>
+          🔐 Security
+        </button>
       </div>
 
       {loading && (
@@ -550,6 +616,51 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Security Tab */}
+      {tab === "security" && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-150">
+          <h2 className="text-2xl font-bold mb-4">Security & MFA</h2>
+          {mfaLoading ? (
+            <div>Loading...</div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <div className="text-sm text-gray-500">Multi-factor authentication (TOTP)</div>
+                <div className="mt-2 font-semibold">Status: {mfaEnabled ? <span className="text-green-600">Enabled</span> : <span className="text-gray-600">Disabled</span>}</div>
+              </div>
+
+              {!mfaEnabled && !mfaSetup && (
+                <div className="flex gap-2">
+                  <button onClick={startMfaSetup} className="px-4 py-2 rounded-lg bg-indigo-600 text-white">Set up MFA</button>
+                </div>
+              )}
+
+              {mfaSetup && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                  <div className="sm:col-span-1">
+                    <img src={mfaSetup.qr} alt="MFA QR" className="w-48 h-48 bg-white p-2 rounded-md shadow" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="mb-2">Manual code:</div>
+                    <div className="font-mono bg-gray-50 p-2 rounded">{mfaSetup.manual}</div>
+                    <div className="mt-4">
+                      <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} placeholder="123456" className="px-3 py-2 border rounded mr-2" />
+                      <button onClick={confirmMfaSetup} className="px-4 py-2 rounded-lg bg-green-600 text-white">Confirm</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {mfaEnabled && (
+                <div>
+                  <button onClick={disableMfa} className="px-4 py-2 rounded-lg bg-red-600 text-white">Disable MFA</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

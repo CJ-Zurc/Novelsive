@@ -27,6 +27,11 @@ model User {
   user_reading_events   UserReadingEvent[]
   user_preference       UserPreferenceProfile?
   password_reset_tokens PasswordResetToken[]
+  
+  // MFA
+  mfa_enabled           Boolean  @default(false)
+  mfa_secret            String?  @db.VarChar(255)
+  mfa_temp_secret       String?  @db.VarChar(255)
 }
 
 enum Role {
