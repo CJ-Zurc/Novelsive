@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    Int      @id @default(autoincrement())
+  username              String   @unique @db.VarChar(50)
+  email                 String   @unique @db.VarChar(100)
+  password              String   @db.VarChar(255)
+  role                  Role     @default(USER)
+  date_of_birth         DateTime? @db.Date
+  profile_image         String?  @db.VarChar(255)
+  is_active             Boolean  @default(true)
+  is_banned             Boolean  @default(false)
+  created_at            DateTime @default(now())
+  
+  // Relations
+  novels                Novel[]
+  ratings               Rating[]
+  comments              Comment[]
+  reading_history       ReadingHistory[]
+  user_reading_events   UserReadingEvent[]
+  user_preference       UserPreferenceProfile?
+  password_reset_tokens PasswordResetToken[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  token_hash String   @db.VarChar(255)
+  expires_at DateTime
+  used_at    DateTime?
+  
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Novel {
+  id              Int      @id @default(autoincrement())
+  author_id       Int
+  title           String   @db.VarChar(255)
+  synopsis        String   @db.Text
+  cover_image     String   @db.VarChar(255)
+  title_image     String   @db.VarChar(255)
+  is_mature       Boolean  @default(false)
+  admin_locked    Boolean  @default(false)
+  is_active       Boolean  @default(true)
+  view_count      Int      @default(0)
+  created_at      DateTime @default(now())
+  
+  author          User     @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  genres          NovelGenre[]
+  chapters        Chapter[]
+  ratings         Rating[]
+  reading_history ReadingHistory[]
+  reading_events  UserReadingEvent[]
+}
+
+model NovelGenre {
+  novel_id Int
+  genre    String @db.VarChar(50)
+  
+  novel    Novel  @relation(fields: [novel_id], references: [id], onDelete: Cascade)
+  
+  @@id([novel_id, genre])
+}
+
+model Chapter {
+  id                 Int      @id @default(autoincrement())
+  novel_id           Int
+  title              String   @db.VarChar(255)
+  content            String   @db.LongText
+  status             ChapterStatus @default(DRAFT)
+  order_index        Int
+  created_at         DateTime @default(now())
+  
+  novel              Novel    @relation(fields: [novel_id], references: [id], onDelete: Cascade)
+  paragraph_blocks   ParagraphBlock[]
+  comments           Comment[]
+  reading_history    ReadingHistory[]
+  reading_events     UserReadingEvent[]
+  nlp_metadata       ChapterNlpMetadata?
+  reviews            ManuscriptReview[]
+}
+
+enum ChapterStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+}
+
+model ParagraphBlock {
+  id               Int      @id @default(autoincrement())
+  chapter_id       Int
+  content          String   @db.Text
+  word_count       Int
+  block_index      Int
+  
+  chapter          Chapter  @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+  emotion          ParagraphEmotion?
+}
+
+model ParagraphEmotion {
+  paragraph_block_id Int      @id
+  emotion_label      EmotionLabel
+  confidence_score   Float
+  
+  paragraph_block    ParagraphBlock @relation(fields: [paragraph_block_id], references: [id], onDelete: Cascade)
+}
+
+enum EmotionLabel {
+  JOY
+  SADNESS
+  ANGER
+  FEAR
+  SURPRISE
+  LOVE
+  DISGUST
+  NEUTRAL
+}
+
+model ChapterNlpMetadata {
+  chapter_id        Int      @id
+  dominant_emotion  EmotionLabel
+  secondary_emotion EmotionLabel?
+  genres            Json     // Array of strings
+  tags              Json     // Array of strings
+  
+  chapter           Chapter  @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  novel_id   Int
+  score      Int      // 1-5
+  created_at DateTime @default(now())
+  
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  novel      Novel    @relation(fields: [novel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, novel_id])
+}
+
+model Comment {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  chapter_id Int
+  content    String   @db.Text
+  created_at DateTime @default(now())
+  
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  chapter    Chapter  @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+}
+
+model ReadingHistory {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  novel_id        Int
+  chapter_id      Int
+  paragraph_index Int
+  last_read_at    DateTime @default(now())
+  
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  novel           Novel    @relation(fields: [novel_id], references: [id], onDelete: Cascade)
+  chapter         Chapter  @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, novel_id])
+}
+
+model UserReadingEvent {
+  id                  Int      @id @default(autoincrement())
+  user_id             Int
+  novel_id            Int
+  chapter_id          Int
+  duration_seconds    Int
+  emotions_encountered Json    // Array of EmotionLabel
+  created_at          DateTime @default(now())
+  
+  user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  novel               Novel    @relation(fields: [novel_id], references: [id], onDelete: Cascade)
+  chapter             Chapter  @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+}
+
+model UserPreferenceProfile {
+  user_id           Int      @id
+  favorite_genres   Json     // Array of strings
+  favorite_emotion  EmotionLabel?
+  read_novel_ids    Json     // Array of ints
+  updated_at        DateTime @updatedAt
+  
+  user              User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model ManuscriptReview {
+  id               Int      @id @default(autoincrement())
+  chapter_id       Int
+  admin_id         Int
+  action           ReviewAction
+  rejection_reason String?  @db.Text
+  reviewed_at      DateTime @default(now())
+  
+  chapter          Chapter  @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+  // Admin is a User with role ADMIN
+}
+
+enum ReviewAction {
+  APPROVE
+  REJECT
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  admin_id    Int
+  action      String   @db.VarChar(100)
+  target_type String   @db.VarChar(50) // e.g. "NOVEL", "MANUSCRIPT", "USER"
+  target_id   Int
+  created_at  DateTime @default(now())
+}

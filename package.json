@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "node dev.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,5 +18,13 @@
   "bugs": {
     "url": "https://github.com/CJ-Zurc/Novelsive/issues"
   },
-  "homepage": "https://github.com/CJ-Zurc/Novelsive#readme"
+  "homepage": "https://github.com/CJ-Zurc/Novelsive#readme",
+  "dependencies": {
+    "otplib": "^13.4.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "tailwindcss": "^4.3.0"
+  }
 }

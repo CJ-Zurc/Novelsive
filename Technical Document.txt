@@ -5,6 +5,11 @@
 **Novelsive: An Immersive Novel Reading Web Application using Natural Language Processing**
 
 ---
+Test Accounts (All passwords are Password123!)
+
+👤 Reader: reader@novelsive.com
+✍️ Author: author@novelsive.com
+🛡️ Admin: admin@novelsive.com
 
 # 1. Overview
 
