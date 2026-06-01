@@ -3,23 +3,32 @@ const path = require('path');
 
 const rootDir = __dirname;
 const frontendDir = path.join(rootDir, 'frontend');
+const backendDir = path.join(rootDir, 'backend');
 const nlpVenvDir = path.join(rootDir, 'nlp-service', 'venv');
 const fs = require('fs');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const nodeCommand = process.execPath;
 let uvicornCommand = process.platform === 'win32'
   ? path.join(nlpVenvDir, 'Scripts', 'uvicorn.exe')
   : path.join(nlpVenvDir, 'bin', 'uvicorn');
 
 console.log('rootDir:', rootDir);
 console.log('frontendDir exists:', fs.existsSync(frontendDir), frontendDir);
+console.log('backendDir exists:', fs.existsSync(backendDir), backendDir);
 console.log('nlpVenvDir exists:', fs.existsSync(nlpVenvDir), nlpVenvDir);
 console.log('expected uvicorn path:', uvicornCommand, 'exists:', fs.existsSync(uvicornCommand));
 
 function spawnWithLog(command, args, opts = {}) {
   console.log('spawning', command, args, 'cwd=', opts.cwd);
-  // Use shell on Windows to allow .cmd/.bat executables to run reliably
-  const useShell = process.platform === 'win32';
-  return spawn(command, args, { shell: useShell, stdio: 'inherit', ...opts });
+  return spawn(command, args, { shell: false, stdio: 'inherit', ...opts });
+}
+
+function spawnNpmDev(cwd) {
+  if (process.platform === 'win32') {
+    return spawnWithLog('cmd.exe', ['/c', 'npm', 'run', 'dev'], { cwd });
+  }
+
+  return spawnWithLog('npm', ['run', 'dev'], { cwd });
 }
 
 if (!fs.existsSync(frontendDir)) {
@@ -27,7 +36,15 @@ if (!fs.existsSync(frontendDir)) {
   process.exit(1);
 }
 
-const frontend = spawnWithLog(npmCommand, ['run', 'dev'], { cwd: frontendDir });
+let backend;
+if (fs.existsSync(backendDir) && fs.existsSync(path.join(backendDir, 'index.js'))) {
+  backend = spawnWithLog(nodeCommand, [path.join(backendDir, 'index.js')], { cwd: backendDir });
+} else {
+  console.error('backend directory or backend/index.js not found:', backendDir);
+  process.exit(1);
+}
+
+const frontend = spawnNpmDev(frontendDir);
 
 const nlpServiceDir = path.join(rootDir, 'nlp-service');
 
@@ -49,7 +66,7 @@ if (fs.existsSync(uvicornCommand)) {
   }
 }
 
-const children = [frontend, nlpService];
+const children = [backend, frontend, nlpService];
 let shuttingDown = false;
 
 function shutdown(exitCode = 0) {

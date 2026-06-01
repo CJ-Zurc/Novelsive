@@ -128,11 +128,23 @@ export default function WriteChapterPage() {
 
         try {
             await axios.post(`/api/chapters/${chapterId}/publish`);
+        } catch (error: any) {
+            Swal.fire({
+                icon: "error",
+                title: "Publish Failed",
+                text: error?.response?.data?.message || "Could not submit the chapter for review.",
+                confirmButtonColor: "#4F46E5"
+            });
+            fetchChapters();
+            return;
+        }
+
+        try {
             await axios.post(`/api/chapters/${chapterId}/process-nlp`);
             Swal.fire({ icon: "success", title: "Submitted!", text: "Chapter submitted for review and NLP analysis complete.", timer: 3000, showConfirmButton: false });
             fetchChapters();
-        } catch {
-            Swal.fire({ icon: "error", title: "Error", text: "Chapter submitted, but NLP analysis encountered an issue.", confirmButtonColor: "#4F46E5" });
+        } catch (error: any) {
+            Swal.fire({ icon: "error", title: "NLP Failed", text: error?.response?.data?.message || "Chapter was submitted, but NLP analysis encountered an issue.", confirmButtonColor: "#4F46E5" });
             fetchChapters();
         }
     };

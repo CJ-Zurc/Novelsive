@@ -5,7 +5,7 @@ import { getUserFromToken } from "@/lib/auth";
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const user = await getUserFromToken(req);
-        if (!user || (user.role !== "AUTHOR" && user.role !== "ADMIN")) {
+        if (!user) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
         }
 
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             include: { novel: true }
         });
         
-        if (!chapter || chapter.novel.author_id !== user.id) {
+        if (!chapter || (chapter.novel.author_id !== user.id && user.role !== "ADMIN")) {
             return NextResponse.json({ message: "Chapter not found or unauthorized" }, { status: 403 });
         }
 

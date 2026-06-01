@@ -104,9 +104,9 @@ export default function ImmersiveReaderPage() {
         
         // Handle Tints
         if (emo === "ANGER") {
-            setAmbientColor("rgba(255, 0, 0, 0.15)");
+            setAmbientColor("rgba(255, 0, 0, 0.06)");
         } else if (emo === "DISGUST") {
-            setAmbientColor("rgba(0, 255, 0, 0.15)");
+            setAmbientColor("rgba(0, 255, 0, 0.04)");
         }
         
         // Handle Audio
@@ -186,24 +186,24 @@ export default function ImmersiveReaderPage() {
 
     return (
         <div 
-            className="min-h-screen transition-colors duration-1000 ease-in-out relative" 
-            style={{ backgroundColor: ambientColor || "#f9fafb" }}
+            className="min-h-screen transition-colors duration-1000 ease-in-out relative text-slate-100" 
+            style={{ backgroundColor: ambientColor || "#071024" }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
             
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-gray-200 px-4 py-3 flex justify-between items-center shadow-sm">
+            <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex justify-between items-center shadow-sm">
                 <div className="flex items-center gap-4">
-                    <Link href={`/novel/${novelId}`} className="text-blue-600 hover:underline font-medium">
+                    <Link href={`/novel/${novelId}`} className="text-indigo-300 hover:underline font-medium">
                         ← Back to Novel
                     </Link>
-                    <span className="text-gray-300">|</span>
-                    <h1 className="font-bold text-gray-900 truncate max-w-xs md:max-w-md">{chapter.title}</h1>
+                    <span className="text-slate-600">|</span>
+                    <h1 className="font-bold text-slate-100 truncate max-w-xs md:max-w-md">{chapter.title}</h1>
                 </div>
                 <button 
                     onClick={() => { setAudioEnabled(!audioEnabled); audioManager.setEnabled(!audioEnabled); }}
-                    className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${audioEnabled ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}
+                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${audioEnabled ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300'}`}
                 >
                     {audioEnabled ? "🔊 Ambient: ON" : "🔇 Ambient: OFF"}
                 </button>
@@ -229,7 +229,7 @@ export default function ImmersiveReaderPage() {
                             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                         
-                        <div className="bg-white p-8 md:p-12 rounded-2xl shadow-xl text-lg md:text-2xl leading-relaxed text-gray-800 min-h-[300px] flex items-center justify-center transition-all duration-500">
+                        <div className="bg-slate-900/80 p-8 md:p-12 rounded-2xl shadow-xl text-lg md:text-2xl leading-relaxed text-slate-100 min-h-[300px] flex items-center justify-center transition-all duration-500">
                             <p className="transition-opacity duration-300">{blocks[currentSlide]?.content}</p>
                         </div>
 

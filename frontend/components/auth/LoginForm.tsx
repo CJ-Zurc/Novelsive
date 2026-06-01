@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -55,7 +57,6 @@ export default function LoginForm() {
                     return;
                 }
 
-                // If MFA required, switch to MFA stage
                 if (data.mfaRequired) {
                     setStage('mfa');
                     setError('');
@@ -63,10 +64,7 @@ export default function LoginForm() {
                 }
 
                 router.push("/");
-            } else {
-                // shouldn't reach here via handleSubmit
             }
-
         } catch (err) {
             setError("Something went wrong. Please try again.");
         } finally {
@@ -96,105 +94,61 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                    Welcome back
-                </h1>
-                <p className="text-gray-500 text-sm mb-6">
-                    Sign in to your Novelsive account
-                </p>
+        <div className="min-h-screen flex items-center justify-center bg-slate-950">
+            <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-xl shadow-md w-full max-w-md">
+                <h1 className="text-2xl font-bold text-slate-100 mb-2">Welcome back</h1>
+                <p className="text-slate-400 text-sm mb-6">Sign in to your Novelsive account</p>
 
                 {error && (
-                    <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-4">
-                        {error}
-                    </div>
+                    <div className="bg-rose-950/40 text-rose-400 px-4 py-3 rounded-lg text-sm mb-4">{error}</div>
                 )}
 
                 <form onSubmit={stage === 'credentials' ? handleSubmit : handleMfaSubmit} className="space-y-4">
                     {stage === 'credentials' && (
                         <>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    placeholder="Enter your email"
-                                />
+                                <label className="block text-sm font-medium text-slate-200 mb-1">Email</label>
+                                <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Enter your email" />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Password
-                                </label>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    placeholder="Enter your password"
-                                />
+                                <label className="block text-sm font-medium text-slate-200 mb-1">Password</label>
+                                <Input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Enter your password" />
                             </div>
                         </>
                     )}
 
                     {stage === 'mfa' && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Authenticator code</label>
-                            <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} placeholder="123456" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                            <div className="text-sm text-gray-500 mt-2">Enter the 6-digit code from your authenticator app.</div>
+                            <label className="block text-sm font-medium text-slate-200 mb-1">Authenticator code</label>
+                            <Input value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} placeholder="123456" />
+                            <div className="text-sm text-slate-400 mt-2">Enter the 6-digit code from your authenticator app.</div>
                         </div>
                     )}
 
                     <div className="flex justify-end">
-                        <Link
-                            href="/forgot-password"
-                            className="text-sm text-indigo-600 hover:underline"
-                        >
-                            Forgot password?
-                        </Link>
+                        <Link href="/forgot-password" className="text-sm text-indigo-400 hover:underline">Forgot password?</Link>
                     </div>
 
-                    {/* hCaptcha widget (only for credentials stage) */}
                     {stage === 'credentials' && (
                         <div className="flex justify-center">
-                            <HCaptcha
-                                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!}
-                                onVerify={(token) => setHcaptchaToken(token)}
-                                onExpire={() => setHcaptchaToken("")}
-                                ref={captchaRef}
-                            />
+                            <HCaptcha sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!} onVerify={(token) => setHcaptchaToken(token)} onExpire={() => setHcaptchaToken("")} ref={captchaRef} />
                         </div>
                     )}
 
                     <div className="flex gap-2">
-                        <button
-                            type="submit"
-                            disabled={isLoading || (stage === 'credentials' && !hcaptchaToken)}
-                            className="flex-1 w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <Button type="submit" className="flex-1" disabled={isLoading || (stage === 'credentials' && !hcaptchaToken)}>
                             {isLoading ? (stage === 'mfa' ? 'Verifying...' : 'Signing in...') : (stage === 'mfa' ? 'Verify' : 'Sign in')}
-                        </button>
+                        </Button>
                         {stage === 'mfa' && (
-                            <button type="button" onClick={() => { setStage('credentials'); setMfaCode(''); captchaRef.current?.resetCaptcha(); setHcaptchaToken(''); }} className="px-4 py-2 rounded-lg bg-gray-200">Back</button>
+                            <Button type="button" variant="secondary" onClick={() => { setStage('credentials'); setMfaCode(''); captchaRef.current?.resetCaptcha(); setHcaptchaToken(''); }}>
+                                Back
+                            </Button>
                         )}
                     </div>
                 </form>
 
-                <p className="text-center text-sm text-gray-500 mt-6">
-                    Don't have an account?{" "}
-                    <Link href="/register" className="text-indigo-600 hover:underline font-medium">
-                        Create one
-                    </Link>
-                </p>
+                <p className="text-center text-sm text-slate-400 mt-6">Don't have an account? <Link href="/register" className="text-indigo-400 hover:underline font-medium">Create one</Link></p>
             </div>
         </div>
     );
