@@ -224,6 +224,9 @@ export async function POST(req: NextRequest) {
             path: "/",
         });
 
+        // Clear stale MFA challenge cookie if any
+        response.cookies.set("mfa_challenge", "", { maxAge: 0, path: "/" });
+
         return response;
 
     } catch (error) {

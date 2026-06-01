@@ -80,7 +80,7 @@ export default function Navbar() {
           <Link href="/browse" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white">
             Top Ranks
           </Link>
-          {user && (
+          {user && user.role !== "ADMIN" && (
             <Link href="/my-novels" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white">
               My Novels
             </Link>
