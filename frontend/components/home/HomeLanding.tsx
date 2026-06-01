@@ -104,42 +104,6 @@ export default function HomeLanding() {
     <div className="relative overflow-hidden pb-20">
       <div className="absolute inset-x-0 top-0 -z-10 h-115 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.28),transparent_36%),radial-gradient(circle_at_80%_20%,rgba(14,165,233,0.18),transparent_24%)]" />
 
-      <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-          <Card className="border-slate-800/80 bg-slate-950/75">
-            <CardHeader className="space-y-4 p-8 sm:p-10">
-              <Badge className="w-fit border-0 bg-indigo-600/20 text-indigo-200 hover:bg-indigo-600/20">
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Webnovel-inspired reading experience
-              </Badge>
-              <div className="space-y-4">
-                <CardTitle className="max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">
-                  Discover stories in a darker, sharper reading interface.
-                </CardTitle>
-                <CardDescription className="max-w-2xl text-base text-slate-300 sm:text-lg">
-                  Explore curated stories with a focused night-mode reading experience.
-                </CardDescription>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Link href="/browse">
-                  <Button size="lg" className="gap-2 rounded-full px-6">
-                    Explore ranks <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button variant="outline" size="lg" className="rounded-full px-6">
-                    Create account
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-          </Card>
-
-          <div className="border-slate-800/80 bg-slate-950/75 p-4 rounded-2xl">
-            <TopCarousel items={data?.topRated ?? data?.topViewed ?? data?.newlyUpdated ?? []} />
-          </div>
-        </div>
-      </section>
 
       <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6 lg:px-8">
         {isLoggedIn ? (

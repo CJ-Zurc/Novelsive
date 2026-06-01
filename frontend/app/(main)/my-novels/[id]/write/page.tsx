@@ -33,6 +33,13 @@ export default function WriteChapterPage() {
     const [saving, setSaving] = useState(false);
     const [autoSaveStatus, setAutoSaveStatus] = useState<string>("");
 
+    const modalTheme = {
+        background: "#020617",
+        color: "#e2e8f0",
+        confirmButtonColor: "#4f46e5",
+        cancelButtonColor: "#334155",
+    };
+
     const lastSavedRef = useRef({ title: "", slides: JSON.stringify([{ content: "" }]) });
 
     const fetchChapters = useCallback(async () => {
@@ -89,7 +96,7 @@ export default function WriteChapterPage() {
 
     const handleSaveDraft = async () => {
         if (!title.trim() || slides.every(s => !s.content.trim())) {
-            Swal.fire({ icon: "warning", title: "Incomplete", text: "Title and at least one slide with content are required.", confirmButtonColor: "#4F46E5" });
+            Swal.fire({ icon: "warning", title: "Incomplete", text: "Title and at least one slide with content are required.", ...modalTheme });
             return;
         }
         setSaving(true);
@@ -102,11 +109,11 @@ export default function WriteChapterPage() {
                 if (res.data.chapter?.id) setEditingChapterId(res.data.chapter.id);
             }
             lastSavedRef.current = { title, slides: JSON.stringify(slides) };
-            Swal.fire({ icon: "success", title: "Saved!", text: "Chapter draft saved successfully.", timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: "success", title: "Saved!", text: "Chapter draft saved successfully.", timer: 2000, showConfirmButton: false, ...modalTheme });
             clearEditor();
             fetchChapters();
         } catch {
-            Swal.fire({ icon: "error", title: "Error", text: "Failed to save chapter draft.", confirmButtonColor: "#4F46E5" });
+            Swal.fire({ icon: "error", title: "Error", text: "Failed to save chapter draft.", ...modalTheme });
         } finally {
             setSaving(false);
         }
@@ -124,7 +131,7 @@ export default function WriteChapterPage() {
         });
         if (!result.isConfirmed) return;
 
-        Swal.fire({ title: "Publishing & NLP Processing...", text: "Analyzing emotions slide by slide. This may take a moment.", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: "Publishing & NLP Processing...", text: "Analyzing emotions slide by slide. This may take a moment.", allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...modalTheme });
 
         try {
             await axios.post(`/api/chapters/${chapterId}/publish`);
@@ -133,7 +140,7 @@ export default function WriteChapterPage() {
                 icon: "error",
                 title: "Publish Failed",
                 text: error?.response?.data?.message || "Could not submit the chapter for review.",
-                confirmButtonColor: "#4F46E5"
+                ...modalTheme
             });
             fetchChapters();
             return;
@@ -141,10 +148,10 @@ export default function WriteChapterPage() {
 
         try {
             await axios.post(`/api/chapters/${chapterId}/process-nlp`);
-            Swal.fire({ icon: "success", title: "Submitted!", text: "Chapter submitted for review and NLP analysis complete.", timer: 3000, showConfirmButton: false });
+            Swal.fire({ icon: "success", title: "Submitted!", text: "Chapter submitted for review and NLP analysis complete.", timer: 3000, showConfirmButton: false, ...modalTheme });
             fetchChapters();
         } catch (error: any) {
-            Swal.fire({ icon: "error", title: "NLP Failed", text: error?.response?.data?.message || "Chapter was submitted, but NLP analysis encountered an issue.", confirmButtonColor: "#4F46E5" });
+            Swal.fire({ icon: "error", title: "NLP Failed", text: error?.response?.data?.message || "Chapter was submitted, but NLP analysis encountered an issue.", ...modalTheme });
             fetchChapters();
         }
     };
@@ -152,7 +159,6 @@ export default function WriteChapterPage() {
     const startEditing = (chapter: Chapter) => {
         setEditingChapterId(chapter.id);
         setTitle(chapter.title);
-        // Restore slides from paragraph_blocks or fall back to splitting content
         if (chapter.paragraph_blocks && chapter.paragraph_blocks.length > 0) {
             setSlides(chapter.paragraph_blocks.map(pb => ({ content: pb.content })));
         } else {
@@ -192,15 +198,15 @@ export default function WriteChapterPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/30">
+        <div className="min-h-screen bg-slate-950 text-slate-100">
             <div className="max-w-7xl mx-auto py-8 px-4 flex flex-col lg:flex-row gap-6">
 
                 {/* ── LEFT PANEL: Chapter List ── */}
                 <div className="w-full lg:w-80 shrink-0">
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden sticky top-24">
-                        <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-indigo-600 to-purple-600">
+                    <div className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 overflow-hidden sticky top-24">
+                        <div className="p-5 border-b border-slate-800 bg-slate-900">
                             <h2 className="font-bold text-white text-lg">Chapters</h2>
-                            <p className="text-indigo-200 text-xs mt-1">{chapters.length} chapter{chapters.length !== 1 ? "s" : ""} total</p>
+                            <p className="text-slate-400 text-xs mt-1">{chapters.length} chapter{chapters.length !== 1 ? "s" : ""} total</p>
                         </div>
 
                         <div className="p-3 max-h-[70vh] overflow-y-auto">
@@ -215,30 +221,37 @@ export default function WriteChapterPage() {
                                     {chapters.map(ch => {
                                         const isRejected = ch.status === "REJECTED";
                                         const rejectionInfo = ch.reviews?.[0];
+                                        const canEdit = ch.status !== "PENDING_REVIEW";
                                         return (
-                                            <li key={ch.id} className={`rounded-xl border transition-all ${editingChapterId === ch.id ? "border-indigo-300 bg-indigo-50/60 shadow-sm" : "border-gray-100 bg-gray-50/50 hover:border-gray-200"}`}>
+                                            <li key={ch.id} className={`rounded-xl border transition-all ${editingChapterId === ch.id ? "border-indigo-500 bg-indigo-500/10 shadow-sm" : "border-slate-800 bg-slate-950/40 hover:border-slate-700"}`}>
                                                 {/* Chapter header — clickable */}
                                                 <button
-                                                    onClick={() => (ch.status === "DRAFT" || ch.status === "REJECTED") ? startEditing(ch) : null}
-                                                    className={`w-full text-left p-3 ${(ch.status === "DRAFT" || ch.status === "REJECTED") ? "cursor-pointer" : "cursor-default"}`}
+                                                    onClick={() => canEdit ? startEditing(ch) : null}
+                                                    className={`w-full text-left p-3 ${canEdit ? "cursor-pointer" : "cursor-default"}`}
                                                 >
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="min-w-0">
-                                                            <p className="font-semibold text-gray-900 text-sm truncate">Ch. {ch.order_index}: {ch.title}</p>
+                                                            <p className="font-semibold text-slate-100 text-sm truncate">Ch. {ch.order_index}: {ch.title}</p>
                                                             <div className="flex items-center gap-2 mt-1.5">
                                                                 <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${getStatusStyle(ch.status)}`}>
                                                                     {ch.status.replace("_", " ")}
                                                                 </span>
                                                                 {ch.paragraph_blocks?.length > 0 && (
-                                                                    <span className="text-[10px] text-gray-400">{ch.paragraph_blocks.length} slide{ch.paragraph_blocks.length !== 1 ? "s" : ""}</span>
+                                                                    <span className="text-[10px] text-slate-400">{ch.paragraph_blocks.length} slide{ch.paragraph_blocks.length !== 1 ? "s" : ""}</span>
                                                                 )}
                                                             </div>
                                                         </div>
+                                                        {ch.status === "PUBLISHED" && (
+                                                            <span className="shrink-0 text-xs text-emerald-300 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-lg">Edit published</span>
+                                                        )}
+                                                        {ch.status === "PENDING_REVIEW" && (
+                                                            <span className="shrink-0 text-xs text-amber-300 font-semibold bg-amber-500/10 px-2 py-0.5 rounded-lg">Locked</span>
+                                                        )}
                                                         {ch.status === "DRAFT" && (
-                                                            <span className="shrink-0 text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-lg">Edit</span>
+                                                            <span className="shrink-0 text-xs text-indigo-300 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded-lg">Edit</span>
                                                         )}
                                                         {ch.status === "REJECTED" && (
-                                                            <span className="shrink-0 text-xs text-red-600 font-semibold bg-red-50 px-2 py-0.5 rounded-lg">Fix</span>
+                                                            <span className="shrink-0 text-xs text-rose-300 font-semibold bg-rose-500/10 px-2 py-0.5 rounded-lg">Fix</span>
                                                         )}
                                                     </div>
                                                 </button>
@@ -248,18 +261,18 @@ export default function WriteChapterPage() {
                                                     <div className="border-t border-red-100">
                                                         <button
                                                             onClick={() => setExpandedRejection(expandedRejection === ch.id ? null : ch.id)}
-                                                            className="w-full text-left px-3 py-2 text-xs text-red-600 font-semibold flex items-center justify-between hover:bg-red-50/50 transition"
+                                                            className="w-full text-left px-3 py-2 text-xs text-rose-300 font-semibold flex items-center justify-between hover:bg-rose-500/10 transition"
                                                         >
                                                             <span>⚠ View rejection reason</span>
                                                             <svg className={`w-3 h-3 transition-transform ${expandedRejection === ch.id ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                                         </button>
                                                         {expandedRejection === ch.id && (
                                                             <div className="px-3 pb-3">
-                                                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                                                    <p className="text-xs text-red-700 leading-relaxed whitespace-pre-line">
+                                                                <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                                                                    <p className="text-xs text-rose-200 leading-relaxed whitespace-pre-line">
                                                                         {rejectionInfo.rejection_reason || "No reason provided."}
                                                                     </p>
-                                                                    <p className="text-[10px] text-red-400 mt-2">
+                                                                    <p className="text-[10px] text-rose-400 mt-2">
                                                                         Rejected on {new Date(rejectionInfo.reviewed_at).toLocaleDateString()}
                                                                     </p>
                                                                 </div>
@@ -289,7 +302,7 @@ export default function WriteChapterPage() {
                         <div className="p-3 border-t border-gray-100">
                             <button
                                 onClick={clearEditor}
-                                className="w-full text-sm bg-indigo-600 text-white py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition flex items-center justify-center gap-2"
+                                className="w-full text-sm bg-indigo-600 text-white py-2.5 rounded-xl font-bold hover:bg-indigo-500 transition flex items-center justify-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                 New Chapter
@@ -301,20 +314,20 @@ export default function WriteChapterPage() {
                 {/* ── RIGHT PANEL: Slide Editor ── */}
                 <div className="flex-1 min-w-0">
                     {/* Editor header */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-5">
+                    <div className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 p-6 mb-5">
                         <div className="flex items-start justify-between mb-5">
                             <div>
-                                <h2 className="font-extrabold text-2xl text-gray-900">
-                                    {editingChapterId ? "✏️ Editing Chapter Draft" : "📝 Write New Chapter"}
+                                <h2 className="font-extrabold text-2xl text-white">
+                                    {editingChapterId ? "✏️ Editing Chapter" : "📝 Write New Chapter"}
                                 </h2>
                                 {autoSaveStatus && (
-                                    <p className="text-xs text-indigo-600 mt-1 font-semibold">{autoSaveStatus}</p>
+                                    <p className="text-xs text-indigo-300 mt-1 font-semibold">{autoSaveStatus}</p>
                                 )}
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className="text-xs text-gray-400 font-medium">{wordCount.toLocaleString()} words · {slides.length} slide{slides.length !== 1 ? "s" : ""}</span>
+                                <span className="text-xs text-slate-400 font-medium">{wordCount.toLocaleString()} words · {slides.length} slide{slides.length !== 1 ? "s" : ""}</span>
                                 {editingChapterId && (
-                                    <button onClick={clearEditor} className="text-xs text-gray-500 hover:text-gray-700 font-semibold border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition">
+                                    <button onClick={clearEditor} className="text-xs text-slate-400 hover:text-white font-semibold border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition">
                                         Cancel Edit
                                     </button>
                                 )}
@@ -323,10 +336,10 @@ export default function WriteChapterPage() {
 
                         {/* Chapter title */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Chapter Title</label>
+                            <label className="block text-sm font-bold text-slate-200 mb-2">Chapter Title</label>
                             <input
                                 type="text"
-                                className="w-full border border-gray-200 px-4 py-3 rounded-xl bg-gray-50/50 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none text-gray-900 font-medium transition text-sm"
+                                className="w-full border border-slate-700 px-4 py-3 rounded-xl bg-slate-950/80 focus:ring-2 focus:ring-indigo-500 focus:bg-slate-950 outline-none text-slate-100 font-medium transition text-sm"
                                 value={title}
                                 onChange={e => setTitle(e.target.value)}
                                 placeholder="e.g., The Gathering Storm"
@@ -337,21 +350,21 @@ export default function WriteChapterPage() {
                     {/* Slides */}
                     <div className="space-y-4">
                         {slides.map((slide, index) => (
-                            <div key={index} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:border-indigo-200">
+                            <div key={index} className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 overflow-hidden transition-all hover:border-indigo-500/40">
                                 {/* Slide header */}
-                                <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-gray-50 to-indigo-50/30 border-b border-gray-100">
+                                <div className="flex items-center justify-between px-5 py-3 bg-slate-950/70 border-b border-slate-800">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-xs font-extrabold text-indigo-600 bg-indigo-100 px-2.5 py-1 rounded-full">
+                                        <span className="text-xs font-extrabold text-indigo-200 bg-indigo-500/20 px-2.5 py-1 rounded-full">
                                             Slide {index + 1}
                                         </span>
-                                        <span className="text-xs text-gray-400">
+                                        <span className="text-xs text-slate-400">
                                             {slide.content.trim().split(/\s+/).filter(Boolean).length} words
                                         </span>
                                     </div>
                                     {slides.length > 1 && (
                                         <button
                                             onClick={() => handleRemoveSlide(index)}
-                                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition text-xs font-semibold flex items-center gap-1"
+                                            className="text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 p-1.5 rounded-lg transition text-xs font-semibold flex items-center gap-1"
                                             title="Remove this slide"
                                         >
                                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -365,7 +378,7 @@ export default function WriteChapterPage() {
                                     value={slide.content}
                                     onChange={e => handleSlideChange(index, e.target.value)}
                                     placeholder={`Write the content of Slide ${index + 1} here...`}
-                                    className="w-full px-5 py-4 min-h-[200px] resize-none outline-none text-gray-800 text-sm leading-relaxed bg-white placeholder:text-gray-300 font-serif"
+                                    className="w-full px-5 py-4 min-h-[200px] resize-none outline-none text-slate-100 text-sm leading-relaxed bg-slate-900 placeholder:text-slate-500 font-serif"
                                     style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
                                 />
                             </div>
@@ -374,7 +387,7 @@ export default function WriteChapterPage() {
                         {/* Add Slide button */}
                         <button
                             onClick={handleAddSlide}
-                            className="w-full py-4 border-2 border-dashed border-indigo-200 text-indigo-500 rounded-2xl font-bold text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all duration-200 flex items-center justify-center gap-2"
+                            className="w-full py-4 border-2 border-dashed border-slate-700 text-slate-300 rounded-2xl font-bold text-sm hover:border-indigo-500/50 hover:text-white hover:bg-slate-900 transition-all duration-200 flex items-center justify-center gap-2"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                             Add Slide {slides.length + 1}
@@ -386,7 +399,7 @@ export default function WriteChapterPage() {
                         <button
                             onClick={handleSaveDraft}
                             disabled={saving}
-                            className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition shadow-sm flex items-center gap-2"
+                            className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-500 disabled:opacity-50 transition shadow-sm flex items-center gap-2"
                         >
                             {saving ? (
                                 <>

@@ -138,7 +138,7 @@ export default function BrowseCatalog() {
               </Badge>
               <CardTitle className="text-4xl font-black tracking-tight text-white sm:text-5xl">Find the stories everyone is talking about.</CardTitle>
               <CardDescription className="max-w-2xl text-base text-slate-300 sm:text-lg">
-                Browse the most viewed, highest rated, and fastest moving novels in a cleaner dark catalog.
+                Browse the most viewed, highest rated novels
               </CardDescription>
             </div>
           </CardHeader>

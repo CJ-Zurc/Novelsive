@@ -119,8 +119,8 @@ export default function RegisterForm() {
                         <Input name="profile_image" type="url" value={formData.profile_image} onChange={handleChange} placeholder="https://example.com/avatar.jpg" />
                     </div>
 
-                    <div className="flex justify-center">
-                        <HCaptcha sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!} onVerify={(token) => setHcaptchaToken(token)} onExpire={() => setHcaptchaToken("")} ref={captchaRef} />
+                    <div className="flex justify-center rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
+                        <HCaptcha sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!} onVerify={(token) => setHcaptchaToken(token)} onExpire={() => setHcaptchaToken("")} ref={captchaRef} theme="dark" />
                     </div>
 
                     <Button type="submit" className="w-full" disabled={isLoading || !hcaptchaToken || !isPasswordValid}>

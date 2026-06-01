@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
                         id: n.id,
                         title: n.title,
                         cover_image: n.cover_image,
+                        synopsis: n.synopsis,
                         is_mature: n.is_mature,
                         author: n.author,
                         averageRating: avg,
@@ -79,7 +80,8 @@ export async function GET(req: NextRequest) {
                             is_mature: n.is_mature,
                             author: n.author,
                             averageRating: avg,
-                            genres: n.genres
+                            genres: n.genres,
+                            synopsis: n.synopsis
                         },
                         chapter: h.chapter,
                         latestChapterPublishAt: h.novel.chapters[0].created_at

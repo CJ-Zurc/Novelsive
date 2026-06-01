@@ -80,6 +80,11 @@ export default function Navbar() {
           <Link href="/browse" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white">
             Top Ranks
           </Link>
+          {user && (
+            <Link href="/my-novels" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white">
+              My Novels
+            </Link>
+          )}
           {user?.role === "ADMIN" && (
             <Link href="/admin" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-900 hover:text-white">
               Dashboard
@@ -121,7 +126,7 @@ export default function Navbar() {
                 <div className="hidden text-left sm:block">
                   <div className="text-sm font-semibold text-white">{user.username}</div>
                   <Badge variant="muted" className="mt-1 w-fit border-slate-700 bg-slate-900 text-[10px] uppercase tracking-[0.18em] text-slate-300">
-                    {user.role ?? "Member"}
+                    {user.role === "ADMIN" ? "Admin" : "Member"}
                   </Badge>
                 </div>
               </button>

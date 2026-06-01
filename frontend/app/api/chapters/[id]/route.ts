@@ -38,12 +38,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         // Delete old paragraph blocks and recreate from new slides
         await prisma.paragraphBlock.deleteMany({ where: { chapter_id: chapterId } });
 
+        const nextStatus = chapter.status === "DRAFT" ? "DRAFT" : "PENDING_REVIEW";
+
         const updated = await prisma.chapter.update({
             where: { id: chapterId },
             data: {
                 title,
                 content,
-                status: "DRAFT",
+                status: nextStatus,
                 paragraph_blocks: {
                     create: slides
                         .filter(s => s.trim())

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
+import Swal from "sweetalert2";
 import audioManager from "@/lib/audio";
 
 export default function ImmersiveReaderPage() {
@@ -25,6 +26,8 @@ export default function ImmersiveReaderPage() {
     const [comments, setComments] = useState<any[]>([]);
     const [newComment, setNewComment] = useState("");
     const [audioEnabled, setAudioEnabled] = useState(true);
+    const [disabledMessage, setDisabledMessage] = useState("");
+    const [disabledAlertShown, setDisabledAlertShown] = useState(false);
 
     // Audio references
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -53,7 +56,22 @@ export default function ImmersiveReaderPage() {
                 setComments(commRes.data.comments);
 
             } catch (err) {
-                console.error(err);
+                const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+                if (status === 423) {
+                    const message = axios.isAxiosError(err) ? (err.response?.data?.message || "This chapter is currently disabled") : "This chapter is currently disabled";
+                    setDisabledMessage(message);
+                    await Swal.fire({
+                        icon: "warning",
+                        title: "Chapter unavailable",
+                        text: message,
+                        background: "#020617",
+                        color: "#e2e8f0",
+                        confirmButtonColor: "#4f46e5",
+                    });
+                    setDisabledAlertShown(true);
+                } else {
+                    console.error(err);
+                }
             } finally {
                 setLoading(false);
             }
@@ -183,6 +201,7 @@ export default function ImmersiveReaderPage() {
 
     if (loading) return <div className="p-10 text-center">Loading Immersive Reader...</div>;
     if (!chapter) return <div className="p-10 text-center text-red-500">Chapter not found.</div>;
+    if (disabledMessage && disabledAlertShown) return <div className="p-10 text-center text-slate-100">{disabledMessage}</div>;
 
     return (
         <div 
@@ -229,7 +248,7 @@ export default function ImmersiveReaderPage() {
                             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                         
-                        <div className="bg-slate-900/80 p-8 md:p-12 rounded-2xl shadow-xl text-lg md:text-2xl leading-relaxed text-slate-100 min-h-[300px] flex items-center justify-center transition-all duration-500">
+                        <div className="bg-slate-950/85 border border-slate-800 p-8 md:p-12 rounded-2xl shadow-xl text-lg md:text-2xl leading-relaxed text-slate-100 min-h-[300px] flex items-center justify-center transition-all duration-500">
                             <p className="transition-opacity duration-300">{blocks[currentSlide]?.content}</p>
                         </div>
 
@@ -250,37 +269,37 @@ export default function ImmersiveReaderPage() {
             </div>
 
             {/* Comments Section */}
-            <div className="max-w-3xl mx-auto px-4 py-10 border-t border-gray-200 bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-                <h3 className="text-2xl font-bold mb-6 text-gray-900">Discussion</h3>
+            <div className="max-w-3xl mx-auto px-4 py-10 border-t border-slate-800 bg-slate-950/95 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+                <h3 className="text-2xl font-bold mb-6 text-slate-100">Discussion</h3>
                 
                 <form onSubmit={postComment} className="mb-8">
                     <textarea 
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="What are your thoughts on this chapter?"
-                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none h-24"
+                        className="w-full p-4 border border-slate-800 bg-slate-900 text-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none h-24 placeholder:text-slate-500"
                         required
                     />
                     <div className="flex justify-end mt-2">
-                        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">
+                        <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-500 transition">
                             Post Comment
                         </button>
                     </div>
                 </form>
 
                 <div className="space-y-6">
-                    {comments.length === 0 ? <p className="text-gray-500 text-center italic">No comments yet. Be the first to share your thoughts!</p> : null}
+                    {comments.length === 0 ? <p className="text-slate-500 text-center italic">No comments yet. Be the first to share your thoughts!</p> : null}
                     {comments.map((c: any) => (
                         <div key={c.id} className="flex gap-4">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
+                            <div className="w-10 h-10 rounded-full bg-slate-800 shrink-0 flex items-center justify-center text-slate-100 font-bold overflow-hidden ring-1 ring-slate-700">
                                 {c.user.profile_image ? <img src={c.user.profile_image} alt="User" /> : c.user.username.charAt(0).toUpperCase()}
                             </div>
-                            <div className="bg-gray-50 rounded-2xl p-4 flex-grow">
+                            <div className="bg-slate-900 rounded-2xl p-4 flex-grow border border-slate-800">
                                 <div className="flex justify-between items-baseline mb-1">
-                                    <h4 className="font-bold text-gray-900">{c.user.username}</h4>
-                                    <span className="text-xs text-gray-400">{new Date(c.created_at).toLocaleDateString()}</span>
+                                    <h4 className="font-bold text-slate-100">{c.user.username}</h4>
+                                    <span className="text-xs text-slate-500">{new Date(c.created_at).toLocaleDateString()}</span>
                                 </div>
-                                <p className="text-gray-700 whitespace-pre-wrap">{c.content}</p>
+                                <p className="text-slate-300 whitespace-pre-wrap">{c.content}</p>
                             </div>
                         </div>
                     ))}
