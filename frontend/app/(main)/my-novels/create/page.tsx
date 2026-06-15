@@ -56,73 +56,75 @@ export default function CreateNovelPage() {
             </div>
             
             <Card className="border-slate-800 bg-slate-950/80">
-                <CardContent className="p-6">
-                {error && <div className="bg-rose-950/40 text-rose-400 p-3 rounded mb-6 text-sm">{error}</div>}
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="p-6">
+                    {error && <div className="bg-rose-950/40 text-rose-400 p-3 rounded mb-6 text-sm">{error}</div>}
 
-                <div className="mb-4">
-                    <label className="block text-slate-200 font-bold mb-2">Title</label>
-                    <Input type="text" required
-                        value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-                </div>
-
-                <div className="mb-4">
-                    <label className="block text-slate-200 font-bold mb-2">Synopsis</label>
-                    <textarea required rows={5} className="w-full px-3 py-2 border rounded-lg border-slate-800 bg-slate-900 text-slate-100"
-                        value={formData.synopsis} onChange={e => setFormData({...formData, synopsis: e.target.value})} />
-                </div>
-
-                <div className="mb-4 grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-slate-200 font-bold mb-2">Cover Image URL</label>
-                        <Input type="url" required
-                            value={formData.cover_image} onChange={e => setFormData({...formData, cover_image: e.target.value})} />
+                    <div className="mb-4">
+                        <label className="block text-slate-200 font-bold mb-2">Title</label>
+                        <Input type="text" required
+                            value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
                     </div>
-                    <div>
-                        <label className="block text-slate-200 font-bold mb-2">Title Image URL</label>
-                        <Input type="url" required
-                            value={formData.title_image} onChange={e => setFormData({...formData, title_image: e.target.value})} />
+
+                    <div className="mb-4">
+                        <label className="block text-slate-200 font-bold mb-2">Synopsis</label>
+                        <textarea required rows={5} className="w-full px-3 py-2 border rounded-lg border-slate-800 bg-slate-900 text-slate-100"
+                            value={formData.synopsis} onChange={e => setFormData({...formData, synopsis: e.target.value})} />
                     </div>
-                </div>
 
-                <div className="mb-6">
-                    <label className="block text-slate-200 font-bold mb-2">Genres</label>
-                    <div className="flex flex-wrap gap-2">
-                        {AVAILABLE_GENRES.map(genre => (
-                            <button
-                                key={genre}
-                                type="button"
-                                onClick={() => handleGenreToggle(genre)}
-                                className={`px-3 py-1 rounded-full text-sm font-medium border ${
-                                    formData.genres.includes(genre) 
-                                        ? 'bg-indigo-600 text-white border-indigo-600' 
-                                        : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-900'
-                                }`}
-                            >
-                                {genre}
-                            </button>
-                        ))}
+                    <div className="mb-4 grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-slate-200 font-bold mb-2">Cover Image URL</label>
+                            <Input type="url" required
+                                value={formData.cover_image} onChange={e => setFormData({...formData, cover_image: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-slate-200 font-bold mb-2">Title Image URL</label>
+                            <Input type="url" required
+                                value={formData.title_image} onChange={e => setFormData({...formData, title_image: e.target.value})} />
+                        </div>
                     </div>
-                </div>
 
-                <div className="mb-8">
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" className="form-checkbox h-5 w-5 text-red-600"
-                            checked={formData.is_mature} onChange={e => setFormData({...formData, is_mature: e.target.checked})} />
-                        <span className="text-slate-200 font-bold">Contains Mature Content (18+)</span>
-                    </label>
-                </div>
+                    <div className="mb-6">
+                        <label className="block text-slate-200 font-bold mb-2">Genres</label>
+                        <div className="flex flex-wrap gap-2">
+                            {AVAILABLE_GENRES.map(genre => (
+                                <button
+                                    key={genre}
+                                    type="button"
+                                    onClick={() => handleGenreToggle(genre)}
+                                    className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                                        formData.genres.includes(genre) 
+                                            ? 'bg-indigo-600 text-white border-indigo-600' 
+                                            : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-900'
+                                    }`}
+                                >
+                                    {genre}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-                <p className="text-sm text-slate-400 mb-6">
-                    Mature novels are hidden from the public feed until review.
-                </p>
+                    <div className="mb-8">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" className="form-checkbox h-5 w-5 text-red-600"
+                                checked={formData.is_mature} onChange={e => setFormData({...formData, is_mature: e.target.checked})} />
+                            <span className="text-slate-200 font-bold">Contains Mature Content (18+)</span>
+                        </label>
+                    </div>
 
-                <div className="flex justify-end space-x-4">
-                    <button type="button" onClick={() => router.back()} className="px-4 py-2 text-slate-400 font-medium">Cancel</button>
-                    <Button type="submit" disabled={submitting || formData.genres.length === 0}>
-                        {submitting ? "Creating..." : "Create Novel"}
-                    </Button>
-                </div>
-                </CardContent>
+                    <p className="text-sm text-slate-400 mb-6">
+                        Mature novels are hidden from the public feed until review.
+                    </p>
+
+                    <div className="flex justify-end space-x-4">
+                        <button type="button" onClick={() => router.back()} className="px-4 py-2 text-slate-400 font-medium">Cancel</button>
+                        <Button type="submit" disabled={submitting || formData.genres.length === 0}>
+                            {submitting ? "Creating..." : "Create Novel"}
+                        </Button>
+                    </div>
+                    </CardContent>
+                </form>
             </Card>
         </div>
     );

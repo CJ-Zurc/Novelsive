@@ -35,7 +35,6 @@ export async function POST(req: NextRequest) {
                 cover_image,
                 title_image,
                 is_mature,
-                // Automatically sent to review if mature per requirements
                 is_active: is_mature ? false : true,
                 genres: {
                     create: genres.map(g => ({ genre: g }))
@@ -59,7 +58,7 @@ export async function GET(req: NextRequest) {
         if (type === "my-novels") {
             const user = await getUserFromToken(req);
             if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-            
+
             const novels = await prisma.novel.findMany({
                 where: { author_id: user.id },
                 include: { _count: { select: { chapters: true } } },
@@ -92,8 +91,8 @@ export async function GET(req: NextRequest) {
 
             const novels = await prisma.novel.findMany({
                 where: { is_active: true },
-                include: { 
-                    genres: true, 
+                include: {
+                    genres: true,
                     author: { select: { username: true } },
                     ratings: { select: { score: true } },
                     _count: { select: { chapters: { where: { status: "PUBLISHED" } } } }
@@ -101,8 +100,8 @@ export async function GET(req: NextRequest) {
             });
 
             const novelsWithRating = novels.map(n => {
-                const avg = n.ratings && n.ratings.length > 0 
-                    ? n.ratings.reduce((a: number, c: { score: number }) => a + c.score, 0) / n.ratings.length 
+                const avg = n.ratings && n.ratings.length > 0
+                    ? n.ratings.reduce((a: number, c: { score: number }) => a + c.score, 0) / n.ratings.length
                     : 0;
                 return {
                     ...n,
@@ -125,8 +124,8 @@ export async function GET(req: NextRequest) {
         // Public novels
         const novels = await prisma.novel.findMany({
             where: { is_active: true },
-            include: { 
-                genres: true, 
+            include: {
+                genres: true,
                 author: { select: { username: true } },
                 ratings: { select: { score: true } },
                 _count: { select: { chapters: { where: { status: "PUBLISHED" } } } }
@@ -135,8 +134,8 @@ export async function GET(req: NextRequest) {
         });
 
         const novelsWithRating = novels.map(n => {
-            const avg = n.ratings && n.ratings.length > 0 
-                ? n.ratings.reduce((a: number, c: { score: number }) => a + c.score, 0) / n.ratings.length 
+            const avg = n.ratings && n.ratings.length > 0
+                ? n.ratings.reduce((a: number, c: { score: number }) => a + c.score, 0) / n.ratings.length
                 : 0;
             return {
                 ...n,
