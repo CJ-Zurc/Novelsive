@@ -34,6 +34,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         if (!novel) return NextResponse.json({ message: "Novel not found" }, { status: 404 });
 
+        if (!novel.is_active) {
+            const user = await getUserFromToken(req);
+            const canBypass = Boolean(user && (user.role === "ADMIN" || novel.author_id === user.id));
+            if (!canBypass) {
+                return NextResponse.json({ message: "This novel is currently deactivated" }, { status: 403 });
+            }
+        }
+
         // Calculate average rating
         const avgRating = novel.ratings.length > 0 
             ? novel.ratings.reduce((acc, curr) => acc + curr.score, 0) / novel.ratings.length 

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import TopCarousel from "@/components/home/TopCarousel";
+import HeroCarousel from "@/components/home/HeroCarousel";
 
 interface NovelSummary {
   id: number;
@@ -43,6 +44,7 @@ interface HomeData {
   topRated?: NovelSummary[];
   topViewed?: NovelSummary[];
   newlyUpdated?: NovelSummary[];
+  carouselNovels?: NovelSummary[];
 }
 
 function NovelShelfCard({ novel, href, subtitle }: { novel: NovelSummary; href: string; subtitle: string }) {
@@ -105,7 +107,11 @@ export default function HomeLanding() {
       <div className="absolute inset-x-0 top-0 -z-10 h-115 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.28),transparent_36%),radial-gradient(circle_at_80%_20%,rgba(14,165,233,0.18),transparent_24%)]" />
 
 
-      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
+        {data?.carouselNovels && data.carouselNovels.length > 0 && (
+          <HeroCarousel items={data.carouselNovels} />
+        )}
+
         {isLoggedIn ? (
           <div className="space-y-10">
             <Card>

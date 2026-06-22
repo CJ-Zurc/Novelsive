@@ -90,7 +90,10 @@ export async function GET(req: NextRequest) {
             });
 
             const novels = await prisma.novel.findMany({
-                where: { is_active: true },
+                where: {
+                    is_active: true,
+                    chapters: { some: { status: "PUBLISHED" } }
+                },
                 include: {
                     genres: true,
                     author: { select: { username: true } },
@@ -121,9 +124,12 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ novels: novelsWithRating });
         }
 
-        // Public novels
+        // Public novels — only show novels that have at least one published chapter
         const novels = await prisma.novel.findMany({
-            where: { is_active: true },
+            where: {
+                is_active: true,
+                chapters: { some: { status: "PUBLISHED" } }
+            },
             include: {
                 genres: true,
                 author: { select: { username: true } },

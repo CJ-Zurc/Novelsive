@@ -124,32 +124,40 @@ app.post("/api/nlp/analyze-chapter", async (req, res) => {
         const { text } = req.body;
         if (!text) return res.status(400).json({ error: "Text is required" });
 
-        const chunks = chunkText(text, 200);
+        const slides = text.split(/\r?\n\r?\n---\r?\n\r?\n/);
         const results = [];
+        let blockIndex = 0;
 
-        for (let i = 0; i < chunks.length; i++) {
-            let emotion = "NEUTRAL";
-            let confidence = 1.0;
-            try {
-                // Call python NLP service
-                // Using a fallback for now if the python service is unavailable
-                const response = await axios.post("http://localhost:8000/analyze", { text: chunks[i] });
-                emotion = response.data.emotion?.toUpperCase() || "NEUTRAL";
-                confidence = response.data.confidence || 1.0;
-            } catch (err) {
-                // If NLP service is down, mock it
-                const emotions = ["JOY", "SADNESS", "ANGER", "FEAR", "SURPRISE", "LOVE", "DISGUST", "NEUTRAL"];
-                emotion = emotions[Math.floor(Math.random() * emotions.length)];
-                console.log(`[Mock NLP] Chunk ${i} assigned: ${emotion}`);
+        for (let s = 0; s < slides.length; s++) {
+            const slideText = slides[s];
+            if (!slideText.trim()) continue;
+
+            const chunks = chunkText(slideText, 200);
+
+            for (let i = 0; i < chunks.length; i++) {
+                let emotion = "NEUTRAL";
+                let confidence = 1.0;
+                try {
+                    // Call python NLP service
+                    // Using a fallback for now if the python service is unavailable
+                    const response = await axios.post("http://localhost:8000/analyze", { text: chunks[i] });
+                    emotion = response.data.emotion?.toUpperCase() || "NEUTRAL";
+                    confidence = response.data.confidence || 1.0;
+                } catch (err) {
+                    // If NLP service is down, mock it
+                    const emotions = ["JOY", "SADNESS", "ANGER", "FEAR", "SURPRISE", "LOVE", "DISGUST", "NEUTRAL"];
+                    emotion = emotions[Math.floor(Math.random() * emotions.length)];
+                    console.log(`[Mock NLP] Slide ${s} Chunk ${i} assigned: ${emotion}`);
+                }
+
+                results.push({
+                    block_index: blockIndex++,
+                    content: chunks[i],
+                    word_count: chunks[i].trim().split(/\s+/).filter(Boolean).length,
+                    emotion_label: emotion,
+                    confidence_score: confidence
+                });
             }
-
-            results.push({
-                block_index: i,
-                content: chunks[i],
-                word_count: chunks[i].split(/\s+/).length,
-                emotion_label: emotion,
-                confidence_score: confidence
-            });
         }
 
         res.json({ blocks: results });

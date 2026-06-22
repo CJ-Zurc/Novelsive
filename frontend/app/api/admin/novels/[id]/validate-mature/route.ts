@@ -22,7 +22,8 @@ export async function POST(
             where: { id: novelId },
             data: {
                 is_mature: true,
-                is_active: true
+                is_active: true,
+                admin_locked: true
             }
         });
 

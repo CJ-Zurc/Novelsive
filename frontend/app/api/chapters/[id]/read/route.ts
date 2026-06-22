@@ -10,11 +10,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const chapter = await prisma.chapter.findUnique({
             where: { id: chapterId },
-            include: { novel: { select: { title: true, author_id: true } } }
+            include: { novel: { select: { title: true, author_id: true, is_active: true } } }
         });
 
         if (!chapter) {
             return NextResponse.json({ message: "Chapter not found" }, { status: 404 });
+        }
+
+        const isAdmin = user?.role === "ADMIN";
+        const isAuthor = user && chapter.novel.author_id === user.id;
+
+        if (!chapter.novel.is_active && !isAdmin && !isAuthor) {
+            return NextResponse.json({ message: "This novel is currently deactivated" }, { status: 403 });
         }
 
         if (chapter.status !== "PUBLISHED") {

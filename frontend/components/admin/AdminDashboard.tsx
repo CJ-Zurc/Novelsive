@@ -194,20 +194,37 @@ export default function AdminDashboard() {
   };
 
   const handleRejectManuscript = async (id: number) => {
-    if (!rejectForm.rejection_title.trim() || !rejectForm.rejection_reason.trim()) {
+    const titleTrimmed = rejectForm.rejection_title.trim();
+    const reasonTrimmed = rejectForm.rejection_reason.trim();
+
+    if (!titleTrimmed || !reasonTrimmed) {
       void Swal.fire({ icon: "warning", title: "Incomplete form", text: "Please fill out the rejection title and reason.", background: "#020617", color: "#e2e8f0" });
       return;
     }
 
+    if (titleTrimmed.length < 5) {
+      void Swal.fire({ icon: "warning", title: "Title too short", text: "Rejection title must be at least 5 characters.", background: "#020617", color: "#e2e8f0" });
+      return;
+    }
+
+    if (reasonTrimmed.length < 10) {
+      void Swal.fire({ icon: "warning", title: "Reason too short", text: "Rejection reason must be at least 10 characters.", background: "#020617", color: "#e2e8f0" });
+      return;
+    }
+
     try {
-      await axios.post(`/api/admin/manuscripts/${id}/reject`, rejectForm);
+      await axios.post(`/api/admin/manuscripts/${id}/reject`, {
+        rejection_title: titleTrimmed,
+        rejection_reason: reasonTrimmed,
+      });
       setManuscripts((current) => current.filter((item) => item.id !== id));
       setRejectModal(null);
       setRejectForm({ rejection_title: "", rejection_reason: "" });
       void Swal.fire({ icon: "success", title: "Rejected", text: "Chapter rejected and author notified.", timer: 1500, showConfirmButton: false, background: "#020617", color: "#e2e8f0" });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      void Swal.fire({ icon: "error", title: "Failed", text: "Could not reject chapter.", background: "#020617", color: "#e2e8f0" });
+      const errMsg = error.response?.data?.message || "Could not reject chapter.";
+      void Swal.fire({ icon: "error", title: "Failed", text: errMsg, background: "#020617", color: "#e2e8f0" });
     }
   };
 

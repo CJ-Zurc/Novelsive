@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                         .map((slideContent, idx) => ({
                             content: slideContent,
                             word_count: slideContent.trim().split(/\s+/).filter(Boolean).length,
-                            block_index: idx + 1,
+                            block_index: idx,  // 0-based, consistent with NLP backend
                         }))
                 }
             }
@@ -75,8 +75,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const novel = await prisma.novel.findUnique({ where: { id: novelId } });
         if (!novel) return NextResponse.json({ message: "Not found" }, { status: 404 });
 
-        // If author, show all chapters. Otherwise only published.
+        const isAdmin = user?.role === "ADMIN";
         const isAuthor = user && novel.author_id === user.id;
+
+        if (!novel.is_active && !isAdmin && !isAuthor) {
+            return NextResponse.json({ message: "This novel is currently deactivated" }, { status: 403 });
+        }
 
         const chapters = await prisma.chapter.findMany({
             where: {
